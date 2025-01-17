@@ -3,32 +3,30 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SKYNET_INFRASTRUCTURE.Data;
 using SKYNETCORE.Entities;
+using SKYNETCORE.Interfaces;
 
 namespace SKYNETAPI.Controllers; 
 
 [Route("api/[controller]")]
 [ApiController]
-public class ProductsController : ControllerBase
+public class ProductsController(IProductRepository _productRepository) : ControllerBase
 {
-    private readonly StoreContext _storeContext;
 
-    public ProductsController(StoreContext storeContext)
-    {
-        this._storeContext = storeContext;
-    }
 
+    // products?type=boards
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+    public async Task<IActionResult> GetProducts([FromQuery] string? brand, [FromQuery] string? type, [FromQuery] string? sort)
     {
+        var products = await _productRepository.GetProductsAsync(brand, type, sort);
         
-        var products = await _storeContext.Products.ToListAsync();
+        
         return Ok(products);
     }
 
     [HttpGet("{id:Guid}")]
-    public async Task<ActionResult<Product>> GetProduct([FromRoute] Guid id)
+    public async Task<IActionResult> GetProduct([FromRoute] Guid id)
     {
-        var product = await _storeContext.Products.FindAsync(id);
+        var product = await _productRepository.GetProductByIdAsync(id);
 
         if (product == null) return NotFound();
 
@@ -39,11 +37,14 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Product>> CreateProduct(Product product)
     {
-         _storeContext.Products.Add(product);
+        _productRepository.AddProduct(product);
 
-        await _storeContext.SaveChangesAsync();
+        if (await _productRepository.SaveChangesAsync())
+            return CreatedAtAction("GetProduct", new {id = product.Id}, product);
 
-        return Ok(product);
+         
+
+        return BadRequest("Problem creating product");
     }
 
     [HttpPut("{id:Guid}")]
@@ -52,31 +53,51 @@ public class ProductsController : ControllerBase
         if (product.Id != id || !ProductExists(id))
             return BadRequest("Cannot update this product");
 
-        _storeContext.Entry(product).State = EntityState.Modified;
+        _productRepository.UpdateProduct(product);
 
-        await _storeContext.SaveChangesAsync();
+        if (await _productRepository.SaveChangesAsync())
+            return Ok(product);
 
-        return Ok(product);
-        
+                    
+        return BadRequest("Problem updating product");
 
     }
 
     [HttpDelete("{id:Guid}")]
     public async Task<ActionResult> DeleteProduct([FromRoute] Guid id)
     {
-        var product = await _storeContext.Products.FindAsync(id);
+        var product = await _productRepository.GetProductByIdAsync(id);
+            
 
         if (product == null) return NotFound();
 
-        _storeContext.Products.Remove(product);
+        _productRepository.DeleteProduct(product);
 
-        await _storeContext.SaveChangesAsync();
+        if(await _productRepository.SaveChangesAsync())
+            return Ok(product);
 
-        return Ok(product);
+
+        return BadRequest("Problem deleting the product");
+    }
+
+    [HttpGet("brands")]
+    public async Task<IActionResult> GetBrands()
+    {
+        var brands = await _productRepository.GetBrandsAsync();
+
+        return Ok(brands);
+    }
+
+    [HttpGet("types")]
+    public async Task<IActionResult> GetTypes()
+    {
+        var types = await _productRepository.GetTypesAsync();
+
+        return Ok(types);
     }
 
     private bool ProductExists(Guid id)
     {
-        return _storeContext.Products.Any(x => x.Id == id);
+        return _productRepository.ProductExists(id);
     }
 }
