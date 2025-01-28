@@ -4,29 +4,34 @@ using Microsoft.EntityFrameworkCore;
 using SKYNET_INFRASTRUCTURE.Data;
 using SKYNETCORE.Entities;
 using SKYNETCORE.Interfaces;
+using SKYNETCORE.Specifications;
 
 namespace SKYNETAPI.Controllers; 
 
 [Route("api/[controller]")]
 [ApiController]
-public class ProductsController(IProductRepository _productRepository) : ControllerBase
+public class ProductsController(IGenericRepository<Product>  _productRepository) : ControllerBase
 {
 
-
+    
     // products?type=boards
     [HttpGet]
     public async Task<IActionResult> GetProducts([FromQuery] string? brand, [FromQuery] string? type, [FromQuery] string? sort)
     {
-        var products = await _productRepository.GetProductsAsync(brand, type, sort);
-        
-        
+        // Crea especificación
+        var spec = new ProductSpecification(brand, type, sort);
+
+        // Usa el repositorio para obtener productos que cumplen la especificación
+        var products = await _productRepository.ListAsync(spec);
+
+        // Mostrar productos
         return Ok(products);
     }
 
     [HttpGet("{id:Guid}")]
     public async Task<IActionResult> GetProduct([FromRoute] Guid id)
     {
-        var product = await _productRepository.GetProductByIdAsync(id);
+        var product = await _productRepository.GetByIdAsync(id);
 
         if (product == null) return NotFound();
 
@@ -37,9 +42,9 @@ public class ProductsController(IProductRepository _productRepository) : Control
     [HttpPost]
     public async Task<ActionResult<Product>> CreateProduct(Product product)
     {
-        _productRepository.AddProduct(product);
+        _productRepository.Add(product);
 
-        if (await _productRepository.SaveChangesAsync())
+        if (await _productRepository.SaveAllAsync())
             return CreatedAtAction("GetProduct", new {id = product.Id}, product);
 
          
@@ -53,9 +58,9 @@ public class ProductsController(IProductRepository _productRepository) : Control
         if (product.Id != id || !ProductExists(id))
             return BadRequest("Cannot update this product");
 
-        _productRepository.UpdateProduct(product);
+        _productRepository.Update(product);
 
-        if (await _productRepository.SaveChangesAsync())
+        if (await _productRepository.SaveAllAsync())
             return Ok(product);
 
                     
@@ -66,14 +71,14 @@ public class ProductsController(IProductRepository _productRepository) : Control
     [HttpDelete("{id:Guid}")]
     public async Task<ActionResult> DeleteProduct([FromRoute] Guid id)
     {
-        var product = await _productRepository.GetProductByIdAsync(id);
+        var product = await _productRepository.GetByIdAsync(id);
             
 
         if (product == null) return NotFound();
 
-        _productRepository.DeleteProduct(product);
+        _productRepository.Remove(product);
 
-        if(await _productRepository.SaveChangesAsync())
+        if(await _productRepository.SaveAllAsync())
             return Ok(product);
 
 
@@ -83,7 +88,9 @@ public class ProductsController(IProductRepository _productRepository) : Control
     [HttpGet("brands")]
     public async Task<IActionResult> GetBrands()
     {
-        var brands = await _productRepository.GetBrandsAsync();
+        //var brands = await _productRepository.GetBrandsAsync();
+        var spec = new BrandListSpecification();
+        var brands = await _productRepository.ListAsync(spec);
 
         return Ok(brands);
     }
@@ -91,13 +98,17 @@ public class ProductsController(IProductRepository _productRepository) : Control
     [HttpGet("types")]
     public async Task<IActionResult> GetTypes()
     {
-        var types = await _productRepository.GetTypesAsync();
+        //var types = await _productRepository.GetTypesAsync();
+        var spec = new BrandListSpecification();
+        var types = await _productRepository.ListAsync(spec);
 
         return Ok(types);
+
+        
     }
 
     private bool ProductExists(Guid id)
     {
-        return _productRepository.ProductExists(id);
+        return _productRepository.Exists(id);
     }
 }
