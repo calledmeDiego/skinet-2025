@@ -2,30 +2,30 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SKYNET_INFRASTRUCTURE.Data;
+using SKYNETAPI.RequestHelpers;
 using SKYNETCORE.Entities;
 using SKYNETCORE.Interfaces;
 using SKYNETCORE.Specifications;
 
 namespace SKYNETAPI.Controllers; 
 
-[Route("api/[controller]")]
-[ApiController]
-public class ProductsController(IGenericRepository<Product>  _productRepository) : ControllerBase
+
+public class ProductsController(IGenericRepository<Product>  _productRepository) : BaseApiController
 {
 
-    
+
     // products?type=boards
     [HttpGet]
-    public async Task<IActionResult> GetProducts([FromQuery] string? brand, [FromQuery] string? type, [FromQuery] string? sort)
+    public async Task<IActionResult> GetProducts([FromQuery] ProductSpecParams specParams)
     {
         // Crea especificación
-        var spec = new ProductSpecification(brand, type, sort);
+        var specifications = new ProductSpecification(specParams);
 
         // Usa el repositorio para obtener productos que cumplen la especificación
-        var products = await _productRepository.ListAsync(spec);
-
+        var results = await CreatePagedResult(_productRepository, specifications, specParams.PageIndex, specParams.PageSize);
+        
         // Mostrar productos
-        return Ok(products);
+        return results;
     }
 
     [HttpGet("{id:Guid}")]
