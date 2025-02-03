@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using SKYNET_INFRASTRUCTURE.Data;
+using SKYNETAPI.Middleware;
 using SKYNETCORE.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,11 +17,16 @@ builder.Services.AddDbContext<StoreContext>(options =>
 // si elegimos addscoped quiere decir que la solicitud vivira tantito tiempo como la solicitud http
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddCors();
+
 
 // MIDDLEWARE CONSIDER
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200", "https://localhost:4200"));
 
 app.MapControllers();
 
