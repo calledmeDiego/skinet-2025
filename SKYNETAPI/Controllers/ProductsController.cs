@@ -97,9 +97,9 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
 
     [HttpGet("types")]
     public async Task<IActionResult> GetTypes()
-    {
+        {
         //var types = await _productRepository.GetTypesAsync();
-        var spec = new BrandListSpecification();
+        var spec = new TypeListSpecification();
         var types = await _productRepository.ListAsync(spec);
 
         return Ok(types);
