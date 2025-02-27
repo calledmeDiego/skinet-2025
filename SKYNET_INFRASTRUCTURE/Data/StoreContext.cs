@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SKYNET_INFRASTRUCTURE.Config;
 using SKYNETCORE.Entities;
 using System;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SKYNET_INFRASTRUCTURE.Data;
 
-public class StoreContext : DbContext
+public class StoreContext : IdentityDbContext<AppUser>
 {
     public StoreContext(DbContextOptions options) : base(options)
     {
@@ -25,5 +26,7 @@ public class StoreContext : DbContext
     }
 
     public DbSet<Product> Products { get; set; }
+    public DbSet<Address> Addresses { get; set; }
+
 }
 
