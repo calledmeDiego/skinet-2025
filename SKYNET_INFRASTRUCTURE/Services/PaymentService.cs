@@ -11,8 +11,7 @@ using System.Threading.Tasks;
 namespace SKYNET_INFRASTRUCTURE.Services;
 
 public class PaymentService(IConfiguration configuration, ICartService cartService, 
-    IGenericRepository<SKYNETCORE.Entities.Product> productRepo,
-    IGenericRepository<DeliveryMethod> dmRepo) : IPaymentService
+    IUnitOfWork _unitOfWork) : IPaymentService
 {
     public async Task<ShoppingCart?> CreatOrUpdatePaymentIntent(string cartId)
     {
@@ -29,7 +28,7 @@ public class PaymentService(IConfiguration configuration, ICartService cartServi
         if (cart.DeliveryMethodId.HasValue)
         {
             // OBTIENE EL DELIVERYMETHOD
-            var deliveryMethod = await dmRepo.GetByIdAsync((Guid)cart.DeliveryMethodId);
+            var deliveryMethod = await _unitOfWork.Repository<DeliveryMethod>().GetByIdAsync((Guid)cart.DeliveryMethodId);
 
             if(deliveryMethod == null) return null;
             //ACTUALIZA EL COSTO DE ENVIO
@@ -39,7 +38,7 @@ public class PaymentService(IConfiguration configuration, ICartService cartServi
         foreach (var item in cart.Items)
         {
            
-            var productItem = await productRepo.GetByIdAsync(item.ProductId);
+            var productItem = await _unitOfWork.Repository<SKYNETCORE.Entities.Product>().GetByIdAsync(item.ProductId);
 
             if (productItem == null) return null;
 

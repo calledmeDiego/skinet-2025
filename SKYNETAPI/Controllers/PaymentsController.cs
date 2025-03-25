@@ -7,7 +7,7 @@ using SKYNETCORE.Interfaces;
 namespace SKYNETAPI.Controllers;
 
 
-public class PaymentsController(IPaymentService paymentService, IGenericRepository<DeliveryMethod> dmRepo) : BaseApiController
+public class PaymentsController(IPaymentService paymentService, IUnitOfWork unitOfWork) : BaseApiController
 {
     [Authorize]
     [HttpPost("{cartId}")]
@@ -23,7 +23,7 @@ public class PaymentsController(IPaymentService paymentService, IGenericReposito
     [HttpGet("delivery-methods")]
     public async Task<IActionResult> GetDeliveryMethods()
     {
-        return Ok(await dmRepo.ListAllAsync());
+        return Ok(await unitOfWork.Repository<DeliveryMethod >().ListAllAsync());
     }
 
 }

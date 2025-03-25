@@ -1,4 +1,5 @@
-﻿using SKYNETCORE.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using SKYNETCORE.Entities;
 using SKYNETCORE.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -39,7 +40,23 @@ public class SpecificationEvaluator<T> where T : BaseEntity
         {
             query = query.Skip(spec.Skip).Take(spec.Take);
         }
-            
+
+
+        //var currentQuery = query; 
+        // Valor inicial
+
+        //foreach (var include in spec.Includes)
+        //{
+        //    currentQuery = currentQuery.Include(include); // Aplica cada include
+        //}
+
+        //query = currentQuery; ==v==
+        
+        query = spec.Includes.Aggregate(query, (current, include) => current.Include(include));
+
+        query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
+
+
         return query;
     }
 

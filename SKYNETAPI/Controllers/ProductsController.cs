@@ -10,7 +10,7 @@ using SKYNETCORE.Specifications;
 namespace SKYNETAPI.Controllers; 
 
 
-public class ProductsController(IGenericRepository<Product>  _productRepository) : BaseApiController
+public class ProductsController(IUnitOfWork _unitOfWork) : BaseApiController
 {
 
 
@@ -22,7 +22,7 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
         var specifications = new ProductSpecification(specParams);
 
         // Usa el repositorio para obtener productos que cumplen la especificación
-        var results = await CreatePagedResult(_productRepository, specifications, specParams.PageIndex, specParams.PageSize);
+        var results = await CreatePagedResult(_unitOfWork.Repository<Product>(), specifications, specParams.PageIndex, specParams.PageSize);
         
         // Mostrar productos
         return results;
@@ -31,7 +31,7 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
     [HttpGet("{id:Guid}")]
     public async Task<IActionResult> GetProduct([FromRoute] Guid id)
     {
-        var product = await _productRepository.GetByIdAsync(id);
+        var product = await _unitOfWork.Repository<Product>().GetByIdAsync(id);
 
         if (product == null) return NotFound();
 
@@ -42,9 +42,9 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
     [HttpPost]
     public async Task<ActionResult<Product>> CreateProduct(Product product)
     {
-        _productRepository.Add(product);
+        _unitOfWork.Repository<Product>().Add(product);
 
-        if (await _productRepository.SaveAllAsync())
+        if (await _unitOfWork.Complete())
             return CreatedAtAction("GetProduct", new {id = product.Id}, product);
 
          
@@ -58,9 +58,9 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
         if (product.Id != id || !ProductExists(id))
             return BadRequest("Cannot update this product");
 
-        _productRepository.Update(product);
+        _unitOfWork.Repository<Product>().Update(product);
 
-        if (await _productRepository.SaveAllAsync())
+        if (await _unitOfWork.Complete())
             return Ok(product);
 
                     
@@ -71,14 +71,14 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
     [HttpDelete("{id:Guid}")]
     public async Task<ActionResult> DeleteProduct([FromRoute] Guid id)
     {
-        var product = await _productRepository.GetByIdAsync(id);
+        var product = await _unitOfWork.Repository<Product>().GetByIdAsync(id);
             
 
         if (product == null) return NotFound();
 
-        _productRepository.Remove(product);
+        _unitOfWork.Repository<Product>().Remove(product);
 
-        if(await _productRepository.SaveAllAsync())
+        if(await _unitOfWork.Complete())
             return Ok(product);
 
 
@@ -90,7 +90,7 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
     {
         //var brands = await _productRepository.GetBrandsAsync();
         var spec = new BrandListSpecification();
-        var brands = await _productRepository.ListAsync(spec);
+        var brands = await _unitOfWork.Repository<Product>().ListAsync(spec);
 
         return Ok(brands);
     }
@@ -100,7 +100,7 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
         {
         //var types = await _productRepository.GetTypesAsync();
         var spec = new TypeListSpecification();
-        var types = await _productRepository.ListAsync(spec);
+        var types = await _unitOfWork.Repository<Product>().ListAsync(spec);
 
         return Ok(types);
 
@@ -109,6 +109,6 @@ public class ProductsController(IGenericRepository<Product>  _productRepository)
 
     private bool ProductExists(Guid id)
     {
-        return _productRepository.Exists(id);
+        return _unitOfWork.Repository<Product>().Exists(id);
     }
 }
