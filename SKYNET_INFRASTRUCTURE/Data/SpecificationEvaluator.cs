@@ -17,6 +17,7 @@ public class SpecificationEvaluator<T> where T : BaseEntity
         if (spec.Criteria != null)
         {
             // Aplica el filtro al conjunto de datos usando Where
+
             query = query.Where(spec.Criteria); // x => x.Brand == brand
         }
 

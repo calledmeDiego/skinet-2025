@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SKYNET_INFRASTRUCTURE.Data;
 using SKYNET_INFRASTRUCTURE.Services;
 using SKYNETAPI.Middleware;
+using SKYNETAPI.SignalR;
 using SKYNETCORE.Entities;
 using SKYNETCORE.Interfaces;
 using StackExchange.Redis;
@@ -35,6 +36,7 @@ builder.Services.AddSingleton<ICartService, CartService>();
 builder.Services.AddAuthorization();
 builder.Services.AddIdentityApiEndpoints<AppUser>().AddEntityFrameworkStores<StoreContext>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddSignalR();
 
 
 
@@ -46,8 +48,13 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:4200", "https://localhost:4200"));
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+
 app.MapControllers();
-app.MapGroup("api").MapIdentityApi<AppUser>();
+app.MapGroup("api").MapIdentityApi<AppUser>(); // use authentication and authorization
+app.MapHub<NotificationHub>("/hub/notifications");
 
 
 try
